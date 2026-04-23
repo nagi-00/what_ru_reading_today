@@ -1,15 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { useStore } from "@/store/useStore";
-import { kakaoDocToBook, searchBook, type KakaoDoc } from "@/api/kakao";
+import { aladinItemToBook, lookupBook, searchBook, type AladinItem } from "@/api/aladin";
 import ManualAddModal from "@/components/ManualAddModal";
 
 type Props = { onOpenSettings: () => void };
 
 export default function TopBar({ onOpenSettings }: Props) {
-  const apiKey = useStore((s) => s.settings.kakaoApiKey);
+  const ttbKey = useStore((s) => s.settings.aladinTtbKey);
   const addBook = useStore((s) => s.addBook);
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<KakaoDoc[]>([]);
+  const [results, setResults] = useState<AladinItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
@@ -24,8 +24,8 @@ export default function TopBar({ onOpenSettings }: Props) {
       setError(null);
       return;
     }
-    if (!apiKey) {
-      setError("설정에서 Kakao REST API 키를 입력해 주세요.");
+    if (!ttbKey) {
+      setError("설정에서 Aladin TTB 키를 입력해 주세요.");
       setResults([]);
       setOpen(true);
       return;
@@ -34,8 +34,8 @@ export default function TopBar({ onOpenSettings }: Props) {
     setError(null);
     timer.current = window.setTimeout(async () => {
       try {
-        const res = await searchBook(query.trim(), apiKey);
-        setResults(res.documents ?? []);
+        const res = await searchBook(query.trim(), ttbKey);
+        setResults(res.item ?? []);
         setOpen(true);
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e));
@@ -47,7 +47,7 @@ export default function TopBar({ onOpenSettings }: Props) {
     return () => {
       if (timer.current) window.clearTimeout(timer.current);
     };
-  }, [query, apiKey]);
+  }, [query, ttbKey]);
 
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
@@ -57,9 +57,19 @@ export default function TopBar({ onOpenSettings }: Props) {
     return () => window.removeEventListener("mousedown", onClick);
   }, []);
 
-  const onPick = (doc: KakaoDoc) => {
-    const book = kakaoDocToBook(doc);
-    addBook(book);
+  const onPick = async (item: AladinItem) => {
+    // Fire-and-forget enrichment via ItemLookUp for the fuller subInfo/story.
+    let enriched: AladinItem = item;
+    try {
+      const isbn = item.isbn13 || item.isbn;
+      if (isbn) {
+        const looked = await lookupBook(isbn, ttbKey);
+        if (looked) enriched = { ...item, ...looked };
+      }
+    } catch {
+      // Enrichment is best-effort; ignore failures.
+    }
+    addBook(aladinItemToBook(enriched));
     setOpen(false);
     setQuery("");
     setResults([]);
@@ -90,16 +100,16 @@ export default function TopBar({ onOpenSettings }: Props) {
             )}
             {!loading &&
               results.map((r, i) => (
-                <div className="search-item" key={`${r.isbn}-${i}`} onClick={() => onPick(r)}>
-                  {r.thumbnail ? (
-                    <img src={r.thumbnail} alt="" />
+                <div className="search-item" key={`${r.isbn13 || r.isbn}-${i}`} onClick={() => onPick(r)}>
+                  {r.cover ? (
+                    <img src={r.cover} alt="" />
                   ) : (
                     <div className="cover-ph">📕</div>
                   )}
                   <div className="meta">
                     <div className="title">{r.title}</div>
                     <div className="sub">
-                      {(r.authors ?? []).join(", ")} · {r.publisher}
+                      {r.author} · {r.publisher}
                     </div>
                   </div>
                   <span className="neu-pill">추가</span>

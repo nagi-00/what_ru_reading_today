@@ -12,13 +12,13 @@ export default defineConfig({
   base: "./",
   server: {
     port: 5173,
-    // Proxy Kakao Book Search to avoid CORS when running in a plain browser.
-    // Front-end calls "/kakao-api/v3/search/book"; Vite forwards it to dapi.kakao.com.
+    // Proxy Aladin TTB OpenAPI to sidestep CORS when running from the browser.
+    // Front-end calls "/aladin-api/ItemSearch.aspx"; Vite forwards to aladin.co.kr.
     proxy: {
-      "/kakao-api": {
-        target: "https://dapi.kakao.com",
+      "/aladin-api": {
+        target: "https://www.aladin.co.kr",
         changeOrigin: true,
-        rewrite: (p) => p.replace(/^\/kakao-api/, ""),
+        rewrite: (p) => p.replace(/^\/aladin-api/, "/ttb/api"),
       },
     },
   },

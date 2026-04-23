@@ -41,7 +41,7 @@ const uuid = () =>
     : `id_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 
 const defaultSettings: Settings = {
-  kakaoApiKey: "",
+  aladinTtbKey: "",
   fontFamily: "Pretendard",
   themeColor: "#f2b8c6", // soft rose to echo the reference screenshot vibe
   darkMode: false,
@@ -152,7 +152,7 @@ export const useStore = create<State>()(
       setSort: (s) => set({ sort: s }),
     }),
     {
-      name: "wryrt.store.v1",
+      name: "wryrt.store.v2",
       storage: createJSONStorage(() => localStorage),
       onRehydrateStorage: () => (state) => {
         if (state) {

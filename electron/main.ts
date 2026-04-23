@@ -27,39 +27,47 @@ function createWindow() {
   }
 }
 
-// ---- Kakao Book Search proxy (avoids CORS and keeps key in main process) ----
+// ---- Aladin TTB OpenAPI proxy (keeps the key in the main process, no CORS) ----
 ipcMain.handle(
-  "kakao:searchBook",
-  async (_evt, payload: { query: string; apiKey: string; page?: number; size?: number; target?: string }) => {
-    const { query, apiKey, page = 1, size = 20, target } = payload;
-    if (!apiKey) throw new Error("Kakao REST API 키가 설정되지 않았습니다.");
-    if (!query?.trim()) return { documents: [], meta: { total_count: 0, is_end: true } };
+  "aladin:call",
+  async (
+    _evt,
+    payload: { path: string; params: Record<string, string | number>; ttbKey: string },
+  ) => {
+    const { path: apiPath, params, ttbKey } = payload;
+    if (!ttbKey) throw new Error("Aladin TTB 키가 설정되지 않았습니다.");
+    if (!apiPath) throw new Error("Aladin API 경로가 없습니다.");
 
-    const url = new URL("https://dapi.kakao.com/v3/search/book");
-    url.searchParams.set("query", query);
-    url.searchParams.set("page", String(page));
-    url.searchParams.set("size", String(size));
-    if (target) url.searchParams.set("target", target);
+    const url = new URL(`https://www.aladin.co.kr/ttb/api/${apiPath}`);
+    url.searchParams.set("ttbkey", ttbKey);
+    url.searchParams.set("Output", "JS");
+    url.searchParams.set("Version", "20131101");
+    for (const [k, v] of Object.entries(params ?? {})) url.searchParams.set(k, String(v));
 
     return await new Promise((resolve, reject) => {
-      const request = net.request({
-        method: "GET",
-        url: url.toString(),
-      });
-      request.setHeader("Authorization", `KakaoAK ${apiKey}`);
+      const request = net.request({ method: "GET", url: url.toString() });
       let body = "";
       request.on("response", (response) => {
         response.on("data", (chunk) => (body += chunk.toString()));
         response.on("end", () => {
+          if (response.statusCode && response.statusCode >= 400) {
+            reject(new Error(`Aladin API error ${response.statusCode}`));
+            return;
+          }
           try {
-            const json = JSON.parse(body);
-            if (response.statusCode && response.statusCode >= 400) {
-              reject(new Error(json?.message || `Kakao API error ${response.statusCode}`));
-            } else {
-              resolve(json);
+            resolve(JSON.parse(body));
+          } catch {
+            const idx = body.indexOf("{");
+            if (idx >= 0) {
+              try {
+                resolve(JSON.parse(body.slice(idx)));
+                return;
+              } catch (e) {
+                reject(e);
+                return;
+              }
             }
-          } catch (e) {
-            reject(e);
+            reject(new Error("Aladin 응답 파싱 실패"));
           }
         });
         response.on("error", reject);

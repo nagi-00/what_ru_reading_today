@@ -58,7 +58,7 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
   const settings = useStore((s) => s.settings);
   const updateSettings = useStore((s) => s.updateSettings);
   const [fonts, setFonts] = useState<string[]>(DEFAULT_FONTS);
-  const [apiKeyInput, setApiKeyInput] = useState(settings.kakaoApiKey);
+  const [apiKeyInput, setApiKeyInput] = useState(settings.aladinTtbKey);
   const [customColor, setCustomColor] = useState(settings.themeColor);
 
   useEffect(() => {
@@ -80,7 +80,7 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="field">
-          <label>Kakao REST API 키</label>
+          <label>Aladin TTB 키</label>
           <div style={{ display: "flex", gap: 8 }}>
             <input
               className="neu-input"
@@ -88,18 +88,18 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
               autoComplete="off"
               value={apiKeyInput}
               onChange={(e) => setApiKeyInput(e.target.value)}
-              placeholder="dapi.kakao.com Book Search용 REST API Key"
+              placeholder="ttbxxxxxxxxxxx001 형태의 Aladin OpenAPI 키"
             />
             <button
               className="neu-btn primary"
-              onClick={() => updateSettings({ kakaoApiKey: apiKeyInput.trim() })}
+              onClick={() => updateSettings({ aladinTtbKey: apiKeyInput.trim() })}
             >
               저장
             </button>
           </div>
           <div className="panel-sub">
-            Kakao Developers(<code>developers.kakao.com</code>)에서 앱을 만들고 REST API 키를 발급받아
-            붙여 넣어 주세요. 키는 이 컴퓨터에만 저장됩니다.
+            알라딘 OpenAPI(<code>blog.aladin.co.kr/openapi</code>)에서 발급받은 TTB 키를 붙여 넣어
+            주세요. 키는 이 컴퓨터에만 저장됩니다.
           </div>
         </div>
 

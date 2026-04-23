@@ -32,7 +32,7 @@ export type SortKey = "recent" | "oldest" | "rating" | "alpha";
 export type CenterMode = "my-lists" | "categories";
 
 export type Settings = {
-  kakaoApiKey: string;
+  aladinTtbKey: string;
   fontFamily: string;
   themeColor: string;
   darkMode: boolean;
@@ -41,26 +41,11 @@ export type Settings = {
 declare global {
   interface Window {
     electronAPI?: {
-      searchBook: (payload: {
-        query: string;
-        apiKey: string;
-        page?: number;
-        size?: number;
-        target?: string;
-      }) => Promise<{
-        documents: Array<{
-          title: string;
-          authors: string[];
-          publisher: string;
-          translators: string[];
-          contents: string;
-          isbn: string;
-          thumbnail: string;
-          url: string;
-          datetime: string;
-        }>;
-        meta: { total_count: number; is_end: boolean };
-      }>;
+      aladinCall: (payload: {
+        path: string;
+        params: Record<string, string | number>;
+        ttbKey: string;
+      }) => Promise<unknown>;
       platform: string;
     };
   }
