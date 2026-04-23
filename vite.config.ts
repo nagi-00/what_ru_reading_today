@@ -12,6 +12,15 @@ export default defineConfig({
   base: "./",
   server: {
     port: 5173,
+    // Proxy Kakao Book Search to avoid CORS when running in a plain browser.
+    // Front-end calls "/kakao-api/v3/search/book"; Vite forwards it to dapi.kakao.com.
+    proxy: {
+      "/kakao-api": {
+        target: "https://dapi.kakao.com",
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/kakao-api/, ""),
+      },
+    },
   },
   build: {
     outDir: "dist",

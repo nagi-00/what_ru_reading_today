@@ -19,14 +19,17 @@ export type KakaoResult = {
 
 /**
  * Call Kakao Book Search.
- * Uses electron IPC when available (preferred, hides key), falls back to
- * direct fetch in the browser for `npm run dev` outside Electron.
+ *  1. Electron IPC when available (keeps the key in main process).
+ *  2. Vite dev proxy at /kakao-api when running from the dev server (bypasses CORS).
+ *  3. Direct fetch otherwise (production web builds need their own CORS strategy).
  */
 export async function searchBook(query: string, apiKey: string): Promise<KakaoResult> {
   if (window.electronAPI?.searchBook) {
     return window.electronAPI.searchBook({ query, apiKey });
   }
-  const url = new URL("https://dapi.kakao.com/v3/search/book");
+  const useProxy = typeof window !== "undefined" && !!(import.meta as { env?: { DEV?: boolean } }).env?.DEV;
+  const base = useProxy ? "/kakao-api" : "https://dapi.kakao.com";
+  const url = new URL(`${base}/v3/search/book`, window.location.origin);
   url.searchParams.set("query", query);
   url.searchParams.set("size", "20");
   const res = await fetch(url.toString(), {
